@@ -1,0 +1,355 @@
+import tkinter as tk
+from tkinter import scrolledtext
+from collections import deque
+import time
+
+
+# =========================
+# Parser 함수
+# =========================
+def markdown_parser():
+
+    process_box.delete("1.0", tk.END)
+    output.delete("1.0", tk.END)
+    stack_view.delete("1.0", tk.END)
+
+    text = entry.get("1.0", tk.END)
+
+    q = deque(text)
+
+    stack = []
+
+    result = ""
+
+    process_box.insert(tk.END, "🌸 Markdown Parsing Start...\n\n")
+
+    while q:
+
+        ch = q.popleft()
+
+        process_box.insert(
+            tk.END,
+            f"📥 Queue : {ch}\n"
+        )
+
+
+        # =========================
+        # 1순위 : ***
+        # =========================
+        if ch == "*" and len(q) >= 2 and q[0] == "*" and q[1] == "*":
+
+            q.popleft()
+            q.popleft()
+
+            if not stack or stack[-1] != "bolditalic":
+
+                stack.append("bolditalic")
+
+                result += "<b><i>"
+
+                process_box.insert(
+                    tk.END,
+                    "🟣 PUSH : bold + italic\n"
+                )
+
+            else:
+
+                stack.pop()
+
+                result += "</i></b>"
+
+                process_box.insert(
+                    tk.END,
+                    "🟣 POP : bold + italic\n"
+                )
+
+
+        # =========================
+        # 2순위 : **
+        # =========================
+        elif ch == "*" and q and q[0] == "*":
+
+            q.popleft()
+
+            if not stack or stack[-1] != "bold":
+
+                stack.append("bold")
+
+                result += "<b>"
+
+                process_box.insert(
+                    tk.END,
+                    "🩷 PUSH : bold\n"
+                )
+
+            else:
+
+                stack.pop()
+
+                result += "</b>"
+
+                process_box.insert(
+                    tk.END,
+                    "🩷 POP : bold\n"
+                )
+
+
+        # =========================
+        # 3순위 : *
+        # =========================
+        elif ch == "*":
+
+            if not stack or stack[-1] != "italic":
+
+                stack.append("italic")
+
+                result += "<i>"
+
+                process_box.insert(
+                    tk.END,
+                    "🩵 PUSH : italic\n"
+                )
+
+            else:
+
+                stack.pop()
+
+                result += "</i>"
+
+                process_box.insert(
+                    tk.END,
+                    "🩵 POP : italic\n"
+                )
+
+
+        # 제목
+        elif ch == "#":
+
+            title = ""
+
+            while q and q[0] != "\n":
+                title += q.popleft()
+
+            result += f"<h1>{title.strip()}</h1>\n"
+
+            process_box.insert(
+                tk.END,
+                "💜 제목 변환 완료\n"
+            )
+
+
+        else:
+            result += ch
+
+
+        # Stack 상태 표시
+        stack_view.delete("1.0", tk.END)
+
+        stack_view.insert(
+            tk.END,
+            "🌼 현재 Stack 상태\n\n"
+        )
+
+        for item in reversed(stack):
+
+            stack_view.insert(
+                tk.END,
+                f"☁️ {item}\n"
+            )
+
+
+        process_box.see(tk.END)
+
+        window.update()
+
+        time.sleep(0.15)
+
+
+    process_box.insert(
+        tk.END,
+        "\n✅ Parsing Complete!"
+    )
+
+    output.insert(tk.END, result)
+
+
+# =========================
+# 메인 창
+# =========================
+window = tk.Tk()
+
+window.title("🌸 Pastel Markdown Parser 🌸")
+
+window.geometry("1050x760")
+
+# 배경색
+window.configure(bg="#FFEFF7")
+
+
+# =========================
+# 제목
+# =========================
+title = tk.Label(
+    window,
+    text="🌷 Stack & Queue Markdown Parser 🌷",
+    font=("맑은 고딕", 24, "bold"),
+    bg="#FFEFF7",
+    fg="#8A5A9E"
+)
+
+title.pack(pady=18)
+
+
+# =========================
+# 입력 라벨
+# =========================
+input_label = tk.Label(
+    window,
+    text="📝 Markdown 입력",
+    font=("맑은 고딕", 13, "bold"),
+    bg="#FFEFF7",
+    fg="#6D6875"
+)
+
+input_label.pack()
+
+
+# =========================
+# 입력창
+# =========================
+entry = scrolledtext.ScrolledText(
+    window,
+    width=92,
+    height=8,
+    font=("Consolas", 12),
+    bg="#FFF9FC",
+    fg="#444444",
+    bd=0,
+    relief="flat",
+    insertbackground="#FF69B4"
+)
+
+entry.pack(pady=10)
+
+
+# =========================
+# 버튼
+# =========================
+convert_btn = tk.Button(
+    window,
+    text="🚀 변환 시작",
+    command=markdown_parser,
+    font=("맑은 고딕", 13, "bold"),
+    bg="#FFB7D5",
+    fg="white",
+    activebackground="#FF9CC7",
+    activeforeground="white",
+    padx=25,
+    pady=10,
+    bd=0,
+    relief="flat",
+    cursor="hand2"
+)
+
+convert_btn.pack(pady=15)
+
+
+# =========================
+# 중간 프레임
+# =========================
+middle_frame = tk.Frame(
+    window,
+    bg="#FFEFF7"
+)
+
+middle_frame.pack(pady=10)
+
+
+# =========================
+# 변환 과정
+# =========================
+process_label = tk.Label(
+    middle_frame,
+    text="⚙️ 변환 과정",
+    font=("맑은 고딕", 13, "bold"),
+    bg="#FFEFF7",
+    fg="#6D6875"
+)
+
+process_label.grid(row=0, column=0, pady=5)
+
+
+process_box = scrolledtext.ScrolledText(
+    middle_frame,
+    width=62,
+    height=18,
+    font=("Consolas", 10),
+    bg="#FFFDFD",
+    fg="#555555",
+    bd=0,
+    relief="flat"
+)
+
+process_box.grid(row=1, column=0, padx=20)
+
+
+# =========================
+# Stack 시각화
+# =========================
+stack_label = tk.Label(
+    middle_frame,
+    text="📚 Stack 시각화",
+    font=("맑은 고딕", 13, "bold"),
+    bg="#FFEFF7",
+    fg="#6D6875"
+)
+
+stack_label.grid(row=0, column=1)
+
+
+stack_view = scrolledtext.ScrolledText(
+    middle_frame,
+    width=25,
+    height=18,
+    font=("Consolas", 11, "bold"),
+    bg="#FFF7E8",
+    fg="#555555",
+    bd=0,
+    relief="flat"
+)
+
+stack_view.grid(row=1, column=1, padx=10)
+
+
+# =========================
+# 결과 라벨
+# =========================
+output_label = tk.Label(
+    window,
+    text="💻 최종 HTML 결과",
+    font=("맑은 고딕", 13, "bold"),
+    bg="#FFEFF7",
+    fg="#6D6875"
+)
+
+output_label.pack(pady=10)
+
+
+# =========================
+# 결과창
+# =========================
+output = scrolledtext.ScrolledText(
+    window,
+    width=92,
+    height=10,
+    font=("Consolas", 12),
+    bg="#FFFFFF",
+    fg="#444444",
+    bd=0,
+    relief="flat"
+)
+
+output.pack(pady=10)
+
+
+window.mainloop()
